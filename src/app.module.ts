@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { WeatherModule } from './weather/weather.module';
-import { WebhookModule } from './webhook/webhook.module';
-import { CommonModule } from './common/common.module';
 import { ConfigModule } from '@nestjs/config';
 import { Config } from './config/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -21,10 +19,6 @@ import { ScheduleModule } from '@nestjs/schedule';
     ScheduleModule.forRoot(),
     SubscriptionsModule,
     WeatherModule,
-    WebhookModule,
-    CommonModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}

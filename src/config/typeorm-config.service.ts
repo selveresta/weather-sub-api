@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmOptionsFactory, TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { Subscription } from '../subscriptions/subscription.entity';
 import { AppConfig } from '@T/config';
 
 @Injectable()
@@ -22,7 +21,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
       username: dbConfig.username,
       password: dbConfig.password,
       database: dbConfig.database,
-      entities: [Subscription],
+      entities: [],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       synchronize: dbConfig.synchronize,
       migrationsRun: dbConfig.migrationsRun,
