@@ -1,0 +1,29 @@
+<html>
+  <head>
+    <meta charset='utf-8' />
+    <title>Weather Update</title>
+    <style>
+      .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #3498db;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 4px;
+        font-weight: bold;
+      }
+      .btn:hover {
+        background-color: #2980b9;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Weather in {{city}}</h1>
+    <p><strong>Temperature:</strong> {{temperature}}°C</p>
+    <p><strong>Humidity:</strong> {{humidity}}%</p>
+    <p><strong>Conditions:</strong> {{description}}</p>
+    <hr />
+    <p>If you no longer wish to receive these updates, you can unsubscribe:</p>
+    <a href='{{unsubscribeLink}}' class='btn'>Unsubscribe</a>
+  </body>
+</html>

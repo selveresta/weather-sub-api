@@ -1,4 +1,3 @@
-// src/weather/dto/forecast.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ForecastDto {

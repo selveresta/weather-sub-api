@@ -20,5 +20,11 @@
     "paths": {
       "@T/*": ["types/*"]
     }
-  }
+  },
+  "include": [
+    "./src/**/*",
+    "./types/**/*",
+    "./src/migrations/**/*.ts",
+    "data-source.ts"
+  ]
 }
