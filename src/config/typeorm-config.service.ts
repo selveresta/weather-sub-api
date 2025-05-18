@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { TypeOrmOptionsFactory, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { AppConfig } from '@T/config';
 import { Subscription } from '../subscriptions/subscription.entity';
+import { join } from 'path';
 
 @Injectable()
 export class TypeOrmConfigService implements TypeOrmOptionsFactory {
@@ -23,7 +24,8 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
       password: dbConfig.password,
       database: dbConfig.database,
       entities: [Subscription],
-      migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+      migrations: [join(__dirname, '..', 'migrations', '*.js')],
+      migrationsTableName: 'migrations',
       synchronize: dbConfig.synchronize,
       migrationsRun: dbConfig.migrationsRun,
       logging: dbConfig.logging,
