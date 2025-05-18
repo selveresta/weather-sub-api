@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,7 +20,7 @@ import { SubscriptionStatus, Frequency } from '@T/subscription';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class SubscriptionsService {
+export class SubscriptionsService implements OnModuleInit {
   constructor(
     @InjectRepository(Subscription)
     private readonly subscriptionRepo: Repository<Subscription>,
@@ -32,6 +33,16 @@ export class SubscriptionsService {
     private readonly config: ConfigService,
   ) {}
 
+  async onModuleInit() {
+    // 1) load all active subscriptions
+    const activeSubs = await this.subscriptionRepo.find({
+      where: { status: SubscriptionStatus.ACTIVE },
+    });
+
+    // 2) for each one, (re-)create the cron job
+    activeSubs.forEach((sub) => this.addCronJobFor(sub));
+  }
+
   async subscribe(dto: CreateSubscriptionDto): Promise<void> {
     const { email, city, frequency } = dto;
     const existing = await this.subscriptionRepo.findOne({ where: { email } });
@@ -42,14 +53,28 @@ export class SubscriptionsService {
     const confirmToken = randomBytes(16).toString('hex');
     const unsubscribeToken = randomBytes(16).toString('hex');
 
-    const sub = this.subscriptionRepo.create({
-      email,
-      city,
-      frequency,
-      confirmToken,
-      unsubscribeToken,
-      status: SubscriptionStatus.PENDING,
-    });
+    let sub: Subscription;
+    if (existing) {
+      // Reuse the old, unsubscribed row — reset its fields:
+      existing.city = city;
+      existing.frequency = frequency;
+      existing.confirmToken = confirmToken;
+      existing.unsubscribeToken = unsubscribeToken;
+      existing.status = SubscriptionStatus.PENDING;
+      existing.confirmedAt = null;
+      existing.unsubscribedAt = null;
+      sub = existing;
+    } else {
+      // No existing record at all → create brand new
+      sub = this.subscriptionRepo.create({
+        email,
+        city,
+        frequency,
+        confirmToken,
+        unsubscribeToken,
+        status: SubscriptionStatus.PENDING,
+      });
+    }
     await this.subscriptionRepo.save(sub);
 
     // побудова посилань
