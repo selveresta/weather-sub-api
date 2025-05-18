@@ -19,6 +19,7 @@ export interface ServerConfig {
   port: number;
   environment: string;
   logLevel: string;
+  url: string;
 }
 
 /**
