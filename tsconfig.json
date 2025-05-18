@@ -23,8 +23,9 @@
   },
   "include": [
     "./src/**/*",
-    "./types/**/*",
+    "./types/**/*.ts",
     "./src/migrations/**/*.ts",
-    "data-source.ts"
+    "data-source.ts",
+    "jest.config.js"
   ]
 }
