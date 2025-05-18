@@ -7,7 +7,6 @@ import { WeatherConfig } from '@T/config';
 
 @Module({
   imports: [
-    ConfigModule,
     HttpModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({

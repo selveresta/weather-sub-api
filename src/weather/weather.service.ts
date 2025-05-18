@@ -1,30 +1,14 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { Forecast, WeatherResponse } from '@T/weather';
 import axios, { AxiosError } from 'axios';
 
 @Injectable()
 export class WeatherService {
-  private readonly apiKey: string;
-  private readonly apiUrl: string;
   private readonly current: string = '/current.json';
 
-  constructor(
-    private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
-  ) {
-    const weatherConfig = this.configService.get<{
-      apiKey: string;
-      apiUrl: string;
-    }>('config.weather');
-    if (!weatherConfig?.apiKey || !weatherConfig?.apiUrl) {
-      throw new Error('Weather API configuration is not defined');
-    }
-    this.apiKey = weatherConfig.apiKey;
-    this.apiUrl = weatherConfig.apiUrl;
-  }
+  constructor(private readonly httpService: HttpService) {}
 
   async fetchWeather(city: string): Promise<Forecast> {
     try {
