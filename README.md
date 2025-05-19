@@ -10,7 +10,7 @@ A backend service built with [NestJS](https://nestjs.com/) that lets users subsc
 - Runs in Docker (Compose) and can be managed by **PM2** in production
 
 You can view the simple React frontend here:
-🔗 **[https://weather-sub.shop/](https://weather-sub.shop/)**
+🔗 **[http://weather-sub.shop/](http://weather-sub.shop/)**
 
 ---
 
@@ -179,7 +179,6 @@ docker-compose logs -f app
 ```
 
 Your API will be on `http://localhost:3001/api`, Postgres on 5432.
-
 
 ## Subscription Logic
 
