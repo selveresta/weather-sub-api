@@ -1,98 +1,213 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+## Weather Subscription API (NestJS)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A backend service built with [NestJS](https://nestjs.com/) that lets users subscribe to weather updates for their city. It:
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+- Exposes a **weather** endpoint to fetch current conditions via WeatherAPI.com
+- Manages **email subscriptions**: subscribe, confirm, unsubscribe
+- Sends confirmation and update emails using **@nestjs-modules/mailer** + Handlebars templates
+- Schedules hourly/daily updates with Nest’s **SchedulerRegistry** & **CronJob**
+- Stores all data in PostgreSQL via **TypeORM**, with automatic migrations
+- Runs in Docker (Compose) and can be managed by **PM2** in production
 
-## Description
+You can view the simple React frontend here:
+🔗 **[https://weather-sub.shop/](https://weather-sub.shop/)**
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## Table of Contents
 
-```bash
-$ yarn install
+- [Features](#features)
+- [API Endpoints](#api-endpoints)
+- [Data Model](#data-model)
+- [Getting Started](#getting-started)
+
+  - [Environment Variables](#environment-variables)
+  - [Running Locally](#running-locally)
+  - [Docker / Docker Compose](#docker--docker-compose)
+
+- [Subscription Logic](#subscription-logic)
+- [Scheduling & Emails](#scheduling--emails)
+- [Migrations](#migrations)
+
+---
+
+## Features
+
+- **Current Weather**: `GET /api/weather?city=<name>`
+- **Subscribe**: `POST /api/subscribe` (email, city, frequency)
+- **Confirm**: `GET /api/confirm/:token`
+- **Unsubscribe**: `GET /api/unsubscribe/:token`
+- **Email Templates**:
+
+  - `subscription-confirm.hbs` (confirmation link)
+  - `weather-update.hbs` (hourly/daily update + unsubscribe link)
+
+- **Scheduler**:
+
+  - Hourly or Daily cron jobs per active subscription
+  - Automatically re-registered on server restart
+
+- **Database**: PostgreSQL with TypeORM entities & migrations
+- **Configuration**: via `@nestjs/config`; supports `.env`
+
+---
+
+## API Endpoints
+
+### Weather
+
+```http
+GET /api/weather?city=Kyiv
 ```
 
-## Compile and run the project
+- **Query**: `city` (string)
+- **Response**:
 
-```bash
-# development
-$ yarn run start
+  ```json
+  {
+    "temperature": 21.3,
+    "humidity": 60,
+    "description": "Partly cloudy"
+  }
+  ```
 
-# watch mode
-$ yarn run start:dev
+### Subscription
 
-# production mode
-$ yarn run start:prod
+```http
+POST /api/subscribe
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "city": "Kyiv",
+  "frequency": "hourly"  // or "daily"
+}
 ```
 
-## Run tests
+- **Responses**:
 
-```bash
-# unit tests
-$ yarn run test
+  - `200` Confirmation email sent
+  - `400` Missing/invalid fields
+  - `409` Email already subscribed
 
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+```http
+GET /api/confirm/:token
 ```
 
-## Deployment
+- Confirms subscription; status moves from **pending** → **active**
+- Starts the cron job
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
+```http
+GET /api/unsubscribe/:token
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+- Moves status from **active** → **unsubscribed**
+- Stops the cron job
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## Data Model
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+**Subscription**
 
-## Support
+| Column              | Type                                      | Notes                  |
+| ------------------- | ----------------------------------------- | ---------------------- |
+| `id`                | `SERIAL PRIMARY KEY`                      |                        |
+| `email`             | `varchar` UNIQUE                          |                        |
+| `city`              | `varchar`                                 | city for updates       |
+| `frequency`         | `ENUM('hourly','daily')`                  | update interval        |
+| `confirm_token`     | `varchar`                                 | for email confirmation |
+| `unsubscribe_token` | `varchar`                                 | for email unsubscribe  |
+| `status`            | `ENUM('pending','active','unsubscribed')` | subscription state     |
+| `created_at`        | `timestamp` DEFAULT now()                 |                        |
+| `confirmed_at`      | `timestamp` NULL                          |                        |
+| `unsubscribed_at`   | `timestamp` NULL                          |                        |
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+## Getting Started
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Environment Variables
 
-## License
+Copy `.env.example` → `.env` and fill in:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```dotenv
+# Server
+PORT=3001
+NODE_ENV=development
+
+# Database (Postgres)
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=testuser
+DATABASE_PASSWORD=testpass
+DATABASE_NAME=weather_test
+TYPEORM_LOGGING=true
+
+# WeatherAPI
+WEATHER_API_URL=https://api.weatherapi.com/v1
+WEATHER_API_KEY=<your key>
+
+# SMTP (for mailer)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=you@example.com
+SMTP_PASS=yourpassword
+```
+
+### Running Locally
+
+```bash
+# install deps
+yarn install
+
+# run migrations
+yarn migration:run
+
+# start in dev mode
+yarn start:dev
+```
+
+### Docker / Docker Compose
+
+```bash
+# build & start
+docker-compose up --build -d
+
+# view logs
+docker-compose logs -f app
+```
+
+Your API will be on `http://localhost:3001/api`, Postgres on 5432.
+
+
+## Subscription Logic
+
+1. **Subscribe** stores a **pending** record + tokens.
+2. **Confirmation** (via token) marks **active**, sets `confirmed_at`, and calls `addCronJobFor()`.
+3. **Unsubscribe** marks **unsubscribed**, sets `unsubscribed_at`, and calls `removeCronJobFor()`.
+4. On every app boot, `onModuleInit()` re-registers cron jobs for all **active** subscriptions.
+
+---
+
+## Scheduling & Emails
+
+- Uses Nest’s **`SchedulerRegistry`** + `cron` package
+- Two Handlebars templates in `src/templates`:
+
+  - **subscription-confirm.hbs**: city, frequency, confirmLink
+  - **weather-update.hbs**: city, temperature, humidity, description, unsubscribeLink
+
+- Emails sent via **@nestjs-modules/mailer** configured in `AppModule`
+
+---
+
+## Migrations
+
+- Defined under `src/migrations/*.ts`
+- Run via `yarn migration:generate`, `yarn migration:run`, `yarn migration:revert`
+- In production, migrations are applied automatically by setting `migrationsRun: true` in TypeORM config.
+
+---
+
+Happy coding! 🚀
